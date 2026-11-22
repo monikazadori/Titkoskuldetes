@@ -1,0 +1,19 @@
+{
+  "id": "/",
+  "name": "A 3. b titkos téli küldetése – Az öt varázspecsét",
+  "short_name": "Öt Pecsét",
+  "description": "Interaktív téli nyomozójáték a 3. b osztály számára.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B192C",
+  "theme_color": "#0B192C",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

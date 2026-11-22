@@ -1,0 +1,8 @@
+{
+  "name": "Mikulás titkos küldetése – Az öt varázspecsét",
+  "description": "Interaktív karácsonyi nyomozójáték a 3. b osztály számára: öt varázspecsét, csapatpróbák és közös ünnepi kaland.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
