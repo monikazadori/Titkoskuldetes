@@ -259,6 +259,7 @@ export default function App() {
             onTeamSolved={(teamId) => handleTeamSolved('nov-25', teamId)}
             onBackToOverview={() => handleNavigate('overview')}
             onGoToClues={() => handleNavigate('clues')}
+            onReplayMission={() => handleRestartMission('nov-25')}
           />
         );
       case 'nov-26':
@@ -270,6 +271,7 @@ export default function App() {
             onTeamSolved={(teamId) => handleTeamSolved('nov-26', teamId)}
             onBackToOverview={() => handleNavigate('overview')}
             onGoToClues={() => handleNavigate('clues')}
+            onReplayMission={() => handleRestartMission('nov-26')}
           />
         );
       case 'nov-27':
@@ -281,6 +283,7 @@ export default function App() {
             onTeamSolved={(teamId) => handleTeamSolved('nov-27', teamId)}
             onBackToOverview={() => handleNavigate('overview')}
             onGoToClues={() => handleNavigate('clues')}
+            onReplayMission={() => handleRestartMission('nov-27')}
           />
         );
       case 'nov-30':
@@ -292,6 +295,7 @@ export default function App() {
             onTeamSolved={(teamId) => handleTeamSolved('nov-30', teamId)}
             onBackToOverview={() => handleNavigate('overview')}
             onGoToClues={() => handleNavigate('clues')}
+            onReplayMission={() => handleRestartMission('nov-30')}
           />
         );
       case 'dec-01':
@@ -302,6 +306,7 @@ export default function App() {
             onComplete={() => handleCompleteMission('dec-01')}
             onTeamSolved={(teamId) => handleTeamSolved('dec-01', teamId)}
             onBackToOverview={() => handleNavigate('overview')}
+            onReplayMission={() => handleRestartMission('dec-01')}
           />
         );
     }

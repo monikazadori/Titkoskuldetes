@@ -40,6 +40,7 @@ interface MissionNov26Props {
   onTeamSolved: (teamId: TeamId) => void;
   onBackToOverview: () => void;
   onGoToClues: () => void;
+  onReplayMission?: () => void;
 }
 
 interface MemoryCard {
@@ -183,6 +184,7 @@ export const MissionNov26: React.FC<MissionNov26Props> = ({
   onTeamSolved,
   onBackToOverview,
   onGoToClues,
+  onReplayMission,
 }) => {
   const [savedInitial] = useState<Partial<MissionNov26SavedState> | null>(() =>
     loadMissionState<MissionNov26SavedState>('nov-26')
@@ -311,6 +313,8 @@ export const MissionNov26: React.FC<MissionNov26Props> = ({
     setOrderPick([]);
     setOrderSolved(false);
     setOrderHint(null);
+    onReplayMission?.();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCardFlip = (cardIdx: number) => {

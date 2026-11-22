@@ -57,6 +57,7 @@ interface MissionNov25Props {
   onTeamSolved: (teamId: TeamId) => void;
   onBackToOverview: () => void;
   onGoToClues: () => void;
+  onReplayMission?: () => void;
 }
 
 const ORDER_ITEMS_CORRECT = [
@@ -116,6 +117,7 @@ export const MissionNov25: React.FC<MissionNov25Props> = ({
   onTeamSolved,
   onBackToOverview,
   onGoToClues,
+  onReplayMission,
 }) => {
   const [savedInitial] = useState<Partial<MissionNov25SavedState> | null>(() =>
     loadMissionState<MissionNov25SavedState>('nov-25')
@@ -176,7 +178,7 @@ export const MissionNov25: React.FC<MissionNov25Props> = ({
   // Task 3: Event ordering
   const [orderIndices, setOrderIndices] = useState<number[]>(() =>
     resumeCompletedView || !Array.isArray(savedInitial?.orderIndices)
-      ? INITIAL_ORDER_INDICES
+      ? [...INITIAL_ORDER_INDICES]
       : savedInitial.orderIndices
   );
   const [q3Solved, setQ3Solved] = useState<boolean>(() =>
@@ -249,13 +251,14 @@ export const MissionNov25: React.FC<MissionNov25Props> = ({
     return () => clearPendingTimers();
   }, []);
 
-  // Ensure an interrupted unlock animation completes cleanly after reload
+  // Ensure an interrupted unlock animation completes cleanly only when restoring from storage on mount
   useEffect(() => {
     if (lockOpened && (!doorOpened || !sealRevealed)) {
       setDoorOpened(true);
       setSealRevealed(true);
     }
-  }, [lockOpened, doorOpened, sealRevealed]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Persist mission progress in localStorage
   useEffect(() => {
@@ -341,7 +344,7 @@ export const MissionNov25: React.FC<MissionNov25Props> = ({
       tfReasonB: null,
       q2Solved: false,
       q2Hint: null,
-      orderIndices: INITIAL_ORDER_INDICES,
+      orderIndices: [...INITIAL_ORDER_INDICES],
       q3Solved: false,
       q3Hint: null,
       hintLevels: {},
@@ -374,7 +377,7 @@ export const MissionNov25: React.FC<MissionNov25Props> = ({
     setTfReasonB(null);
     setQ2Solved(false);
     setQ2Hint(null);
-    setOrderIndices(INITIAL_ORDER_INDICES);
+    setOrderIndices([...INITIAL_ORDER_INDICES]);
     setQ3Solved(false);
     setQ3Hint(null);
     setHintLevels({});
@@ -391,6 +394,8 @@ export const MissionNov25: React.FC<MissionNov25Props> = ({
     setLockOpened(false);
     setDoorOpened(false);
     setSealRevealed(false);
+    onReplayMission?.();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Stage 2 checks

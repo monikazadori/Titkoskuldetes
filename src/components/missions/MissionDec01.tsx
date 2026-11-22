@@ -40,6 +40,7 @@ interface MissionDec01Props {
   onComplete: () => void;
   onTeamSolved: (teamId: TeamId) => void;
   onBackToOverview: () => void;
+  onReplayMission?: () => void;
 }
 
 // Step 2: 5 teams solve 5 clues to reveal the sender's identity: M I K U L Á S
@@ -102,6 +103,7 @@ export const MissionDec01: React.FC<MissionDec01Props> = ({
   onComplete,
   onTeamSolved,
   onBackToOverview,
+  onReplayMission,
 }) => {
   const [savedInitial] = useState<Partial<MissionDec01SavedState> | null>(() =>
     loadMissionState<MissionDec01SavedState>('dec-01')
@@ -213,6 +215,8 @@ export const MissionDec01: React.FC<MissionDec01Props> = ({
     setPart2Choice(null);
     setFinalWord('');
     setFinalPuzzleHint(null);
+    onReplayMission?.();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const checkAllSenderTeams = () => {

@@ -29,6 +29,7 @@ interface MissionNov30Props {
   onTeamSolved: (teamId: TeamId) => void;
   onBackToOverview: () => void;
   onGoToClues: () => void;
+  onReplayMission?: () => void;
 }
 
 // STRICT SECRECY: Strictly winter/nature sounds — zero train horns or train sounds
@@ -141,6 +142,7 @@ export const MissionNov30: React.FC<MissionNov30Props> = ({
   onTeamSolved,
   onBackToOverview,
   onGoToClues,
+  onReplayMission,
 }) => {
   const [savedInitial] = useState<Partial<MissionNov30SavedState> | null>(() =>
     loadMissionState<MissionNov30SavedState>('nov-30')
@@ -261,6 +263,8 @@ export const MissionNov30: React.FC<MissionNov30Props> = ({
     setFinalWordPick('');
     setFinalWordSolved(false);
     setFinalWordHint(null);
+    onReplayMission?.();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const checkSounds = () => {

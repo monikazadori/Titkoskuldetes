@@ -41,6 +41,7 @@ interface MissionNov27Props {
   onTeamSolved: (teamId: TeamId) => void;
   onBackToOverview: () => void;
   onGoToClues: () => void;
+  onReplayMission?: () => void;
 }
 
 const MAZE_GRID = [
@@ -139,6 +140,7 @@ export const MissionNov27: React.FC<MissionNov27Props> = ({
   onTeamSolved,
   onBackToOverview,
   onGoToClues,
+  onReplayMission,
 }) => {
   const [savedInitial] = useState<Partial<MissionNov27SavedState> | null>(() =>
     loadMissionState<MissionNov27SavedState>('nov-27')
@@ -268,6 +270,8 @@ export const MissionNov27: React.FC<MissionNov27Props> = ({
     setCompassPick([]);
     setCompassSolved(false);
     setCompassHint(null);
+    onReplayMission?.();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const movePlayer = (nr: number, nc: number) => {
