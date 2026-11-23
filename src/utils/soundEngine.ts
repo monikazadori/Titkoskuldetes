@@ -101,6 +101,14 @@ class SoundEngine {
     melody.forEach((m) => this.playTone(m.f, m.d, 'triangle', 0.11, m.t));
   }
 
+  public playBellNote(index: number) {
+    if (!this.sfxEnabled) return;
+    const bellNotes = [523.25, 659.25, 783.99, 1046.5];
+    const freq = bellNotes[index % bellNotes.length];
+    this.playTone(freq, 0.32, 'sine', 0.08, 0);
+    this.playTone(freq * 2, 0.18, 'sine', 0.03, 0);
+  }
+
   // Day 4 synthesized winter sounds (strictly NO train sounds)
   public playWinterMysterySound(kind: 'csengo' | 'szel' | 'ho' | 'harang') {
     const ctx = this.ensureContext();

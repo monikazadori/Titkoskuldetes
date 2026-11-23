@@ -55,6 +55,21 @@
   }
 }
 
+@keyframes seal-pop {
+  0% {
+    transform: scale(0.55) rotate(-10deg);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.08) rotate(2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
 .animate-snowfall {
   animation: snowfall linear infinite;
 }
@@ -67,10 +82,15 @@
   animation: twinkle-soft 3.2s ease-in-out infinite;
 }
 
+.animate-seal-pop {
+  animation: seal-pop 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-snowfall,
   .animate-gentle-float,
-  .animate-twinkle {
+  .animate-twinkle,
+  .animate-seal-pop {
     animation: none !important;
   }
 }

@@ -1,4 +1,4 @@
-import { MissionId, MissionMeta, TeamInfo } from '../types/game';
+import { DoorId, DoorMeta } from '../types/game';
 
 export const ASSETS = {
   workshopHero: '/src/assets/images/winter_castle_five_doors_1795376721879.jpg',
@@ -7,136 +7,84 @@ export const ASSETS = {
   magicalDoorsHall: '/src/assets/images/magical_doors_hall_1795373843980.jpg',
 } as const;
 
-// STRICT SECRECY: Only imported and displayed after completing Mission 5 (Dec 1)
-export const FINAL_REWARD_IMAGE = '/src/assets/images/santa_and_train_finale_1795375146793.jpg';
+// STRICT SECRECY: Only displayed after all 5 seals are earned and the secret gift box is clicked
+export const FINAL_TRAIN_PHOTO =
+  '/assets/aistudio/ChatGPT-k_p_2026._nov._23._17_46_00_9a2386a1.png';
+export const FINAL_FOREST_PHOTO =
+  '/assets/aistudio/ChatGPT-k_p_2026._nov._23._17_46_09_b341633d.png';
 
-export const TEAMS: TeamInfo[] = [
+export const DOORS: DoorMeta[] = [
   {
-    id: 'hopihe',
-    name: 'Hópihe nyomozók',
-    motto: 'Éles szemmel minden apró nyomot észreveszünk!',
-    accentHex: '#38BDF8',
-    bgClass: 'bg-sky-500/15',
-    borderClass: 'border-sky-400/40',
-    textClass: 'text-sky-200',
-  },
-  {
-    id: 'csillagmanok',
-    name: 'Csillagmanók',
-    motto: 'Ragyogó ötletekkel világítjuk meg a sötét rejtélyeket!',
-    accentHex: '#FBBF24',
-    bgClass: 'bg-amber-500/15',
-    borderClass: 'border-amber-400/40',
-    textClass: 'text-amber-200',
-  },
-  {
-    id: 'mezeskalacs',
-    name: 'Mézeskalács detektívek',
-    motto: 'Türelemmel és összefogással minden kérdést megoldunk!',
-    accentHex: '#FB923C',
-    bgClass: 'bg-orange-500/15',
-    borderClass: 'border-orange-400/40',
-    textClass: 'text-orange-200',
-  },
-  {
-    id: 'renszarvas',
-    name: 'Rénszarvas őrjárat',
-    motto: 'Bátran és biztos léptekkel haladunk a cél felé!',
-    accentHex: '#F87171',
-    bgClass: 'bg-rose-500/15',
-    borderClass: 'border-rose-400/40',
-    textClass: 'text-rose-200',
-  },
-  {
-    id: 'aranycsengok',
-    name: 'Aranycsengők',
-    motto: 'Figyelmesen hallgatunk minden titkos jelre!',
-    accentHex: '#34D399',
-    bgClass: 'bg-emerald-500/15',
-    borderClass: 'border-emerald-400/40',
-    textClass: 'text-emerald-200',
-  },
-];
-
-export const MISSIONS: MissionMeta[] = [
-  {
-    id: 'nov-25',
-    dayNumber: 1,
-    dateLabel: 'November 25.',
-    shortDate: 'Nov. 25.',
-    unlockMonth: 11,
-    unlockDay: 25,
-    title: 'A titokzatos levél',
-    subtitle:
-      'Szigorúan titkos üzenet érkezett a Titkok Őrzőjétől! Olvassuk el figyelmesen, és fejtsük meg együtt a rejtélyt!',
+    id: 'door-1',
+    doorNumber: 1,
+    title: 'Az eltűnt tárgy',
+    shortLabel: '1. ajtó',
+    subtitle: 'Figyeljétek meg jól a hat téli tárgyat, mert az egyik varázsütésre eltűnik!',
     sealTitle: 'Első arany varázspecsét',
-    clueText: 'Valami különleges vár rátok!',
     doorColor: '#B91C1C',
   },
   {
-    id: 'nov-26',
-    dayNumber: 2,
-    dateLabel: 'November 26.',
-    shortDate: 'Nov. 26.',
-    unlockMonth: 11,
-    unlockDay: 26,
-    title: 'A titokzatos csomagterem',
-    subtitle:
-      'A havas kastély egyik termében összekeveredtek a ládák és a címkék! Állítsuk helyre a rendet közösen!',
+    id: 'door-2',
+    doorNumber: 2,
+    title: 'A varázsszám',
+    shortLabel: '2. ajtó',
+    subtitle: 'Fedezzétek fel a titkos számsor szabályát, és találjátok meg a hiányzó számot!',
     sealTitle: 'Második arany varázspecsét',
-    clueText: 'Ezen a napon nem minden úgy történik majd, mint máskor.',
     doorColor: '#15803D',
   },
   {
-    id: 'nov-27',
-    dayNumber: 3,
-    dateLabel: 'November 27.',
-    shortDate: 'Nov. 27.',
-    unlockMonth: 11,
-    unlockDay: 27,
-    title: 'A varázslatos útvonal',
-    subtitle:
-      'Vezessük át Csillagot a havas fenyves útvesztőjén gondolkodtató rejtvények segítségével!',
+    id: 'door-3',
+    doorNumber: 3,
+    title: 'Az aranykulcs',
+    shortLabel: '3. ajtó',
+    subtitle: 'Következtessetek a nyomokból, melyik színes ládában rejtőzik az aranykulcs!',
     sealTitle: 'Harmadik arany varázspecsét',
-    clueText: 'A kalandhoz kíváncsiságra és bátorságra is szükségetek lesz.',
     doorColor: '#1D4ED8',
   },
   {
-    id: 'nov-30',
-    dayNumber: 4,
-    dateLabel: 'November 30.',
-    shortDate: 'Nov. 30.',
-    unlockMonth: 11,
-    unlockDay: 30,
-    title: 'A titkos hangok',
-    subtitle:
-      'Hallgassátok meg a téli erdő rejtélyes hangjait, és fejtsétek meg a csapatok titkosírását!',
+    id: 'door-4',
+    doorNumber: 4,
+    title: 'A titkos üzenet',
+    shortLabel: '4. ajtó',
+    subtitle: 'Fejtsétek meg a három titkos jelképet a varázslatos kódtábla segítségével!',
     sealTitle: 'Negyedik arany varázspecsét',
-    clueText: 'Egy különleges helyre vezet az utatok.',
     doorColor: '#7C3AED',
   },
   {
-    id: 'dec-01',
-    dayNumber: 5,
-    dateLabel: 'December 1.',
-    shortDate: 'Dec. 1.',
-    unlockMonth: 12,
-    unlockDay: 1,
-    title: 'Az ötödik pecsét',
-    subtitle:
-      'Leplezzük le a Titkok Őrzőjét, és nyissuk fel együtt az utolsó titkos borítékot!',
+    id: 'door-5',
+    doorNumber: 5,
+    title: 'A csengők titka',
+    shortLabel: '5. ajtó',
+    subtitle: 'Jegyezzétek meg a négy színes csengő pontos sorrendjét, mielőtt eltűnnek!',
     sealTitle: 'Ötödik arany varázspecsét',
-    clueText: 'Az ötödik pecsét feltárta a nagy meglepetést!',
     doorColor: '#D97706',
   },
 ];
 
-export const MISSION_ORDER: MissionId[] = ['nov-25', 'nov-26', 'nov-27', 'nov-30', 'dec-01'];
+export const DOOR_ORDER: DoorId[] = ['door-1', 'door-2', 'door-3', 'door-4', 'door-5'];
+
+export const DOOR_ORDINALS: Record<
+  1 | 2 | 3 | 4 | 5,
+  { lower: string; articleLower: string; articleCap: string }
+> = {
+  1: { lower: 'első', articleLower: 'az első', articleCap: 'Az első' },
+  2: { lower: 'második', articleLower: 'a második', articleCap: 'A második' },
+  3: { lower: 'harmadik', articleLower: 'a harmadik', articleCap: 'A harmadik' },
+  4: { lower: 'negyedik', articleLower: 'a negyedik', articleCap: 'A negyedik' },
+  5: { lower: 'ötödik', articleLower: 'az ötödik', articleCap: 'Az ötödik' },
+};
+
+export const LETTER_PARAGRAPHS = [
+  'Egy különleges meglepetés előkészületei zajlanak, de egyelőre nem árulhatom el, mi vár rátok.',
+  'Öt titkos pecsét őrzi a megfejtést. Csak azok tudhatják meg az igazságot, akik bizonyítják, hogy ügyesek, kitartóak, és képesek együtt gondolkodni.',
+  'Ma öt különböző próbát kell teljesítenetek. Minden sikeres próba után egy újabb varázspecsét kerül a birtokotokba.',
+];
 
 export const FINAL_CONGRATULATIONS_LINES = [
   'GRATULÁLUNK, 3. B!',
   'MEGFEJTETTÉTEK A NAGY TITKOT!',
-  'MA, DECEMBER 1-JÉN',
-  'MIKULÁSVONATOZNI INDULUNK!',
-  'KÉSZÜLJETEK A VARÁZSLATOS KALANDRA!',
+  'DECEMBER 1-JÉN MIKULÁSVONATOZNI INDULUNK!',
 ];
+
+export const FINAL_SECOND_CAPTION =
+  'A varázslat még csak most kezdődik! Különleges téli kaland vár rátok!';

@@ -1,47 +1,63 @@
-export type MissionId = 'nov-25' | 'nov-26' | 'nov-27' | 'nov-30' | 'dec-01';
+export type DoorId = 'door-1' | 'door-2' | 'door-3' | 'door-4' | 'door-5';
 
-export type TeamId =
-  | 'hopihe'
-  | 'csillagmanok'
-  | 'mezeskalacs'
-  | 'renszarvas'
-  | 'aranycsengok';
-
-export interface TeamInfo {
-  id: TeamId;
-  name: string;
-  motto: string;
-  accentHex: string;
-  bgClass: string;
-  borderClass: string;
-  textClass: string;
-}
-
-export interface MissionMeta {
-  id: MissionId;
-  dayNumber: number;
-  dateLabel: string;
-  shortDate: string;
-  unlockMonth: number; // 11 for November, 12 for December
-  unlockDay: number;
+export interface DoorMeta {
+  id: DoorId;
+  doorNumber: 1 | 2 | 3 | 4 | 5;
   title: string;
+  shortLabel: string;
   subtitle: string;
   sealTitle: string;
-  clueText: string;
   doorColor: string;
 }
 
-export interface TeacherSettings {
-  strictDay1DateLock: boolean;
-  simulatedDate: string | null; // YYYY-MM-DD or null for real date
-  manualUnlocks: Record<MissionId, boolean>;
+export interface Door1State {
+  phase: 'observe' | 'guess' | 'solved';
+  selectedOption: string | null;
+  errorHint: string | null;
 }
 
-export interface GameProgress {
-  completedMissions: MissionId[];
-  missionStepProgress: Partial<Record<MissionId, number>>;
-  teamCheckpoints: Partial<Record<MissionId, TeamId[]>>;
-  finalRevealUnlocked: boolean;
+export interface Door2State {
+  selectedOption: string | null;
+  solved: boolean;
+  errorHint: string | null;
+}
+
+export interface Door3State {
+  openedEmpty: ('piros' | 'kek')[];
+  solved: boolean;
+  errorHint: string | null;
+}
+
+export interface Door4State {
+  selectedOption: string | null;
+  solved: boolean;
+  errorHint: string | null;
+}
+
+export interface Door5State {
+  phase: 'observe' | 'guess' | 'solved';
+  selectedOrder: string | null;
+  errorHint: string | null;
+}
+
+export interface OneDayGameState {
+  letterOpened: boolean;
+  tf1Answer: boolean | null;
+  tf2Answer: boolean | null;
+  tfHint: string | null;
+  letterChallengeSolved: boolean;
+  completedDoors: DoorId[];
+  door1: Door1State;
+  door2: Door2State;
+  door3: Door3State;
+  door4: Door4State;
+  door5: Door5State;
+  giftBoxOpened: boolean;
+  secondPhotoRevealed: boolean;
+}
+
+export interface TeacherSettings {
+  manualUnlocks: Record<DoorId, boolean>;
 }
 
 export interface AudioPreferences {
@@ -49,4 +65,4 @@ export interface AudioPreferences {
   musicEnabled: boolean;
 }
 
-export type AppView = 'home' | 'overview' | 'teams' | 'clues' | 'mission';
+export type AppView = 'home' | 'letter' | 'doors' | 'seals' | 'door';

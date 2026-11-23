@@ -1,4 +1,4 @@
-const CACHE_NAME = 'titkos-teli-kuldetes-v3';
+const CACHE_NAME = 'titkos-teli-kuldetes-v6';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

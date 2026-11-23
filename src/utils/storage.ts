@@ -1,155 +1,177 @@
-import { MISSIONS } from '../data/missions';
-import { AudioPreferences, GameProgress, MissionId, MissionMeta, TeacherSettings } from '../types/game';
+import { DOORS } from '../data/missions';
+import { AudioPreferences, DoorId, OneDayGameState, TeacherSettings } from '../types/game';
 
-const PROGRESS_KEY = 'mikulas_3b_progress_v1';
-const TEACHER_KEY = 'mikulas_3b_teacher_v1';
+const GAME_STATE_KEY = 'titkos_teli_oneday_state_v1';
+const TEACHER_KEY = 'titkos_teli_oneday_teacher_v1';
 const AUDIO_KEY = 'mikulas_3b_audio_v1';
-const MISSION_STATES_KEY = 'mikulas_3b_mission_states_v1';
 
-export const DEFAULT_PROGRESS: GameProgress = {
-  completedMissions: [],
-  missionStepProgress: {},
-  teamCheckpoints: {},
-  finalRevealUnlocked: false,
-};
+export function createDefaultGameState(): OneDayGameState {
+  return {
+    letterOpened: false,
+    tf1Answer: null,
+    tf2Answer: null,
+    tfHint: null,
+    letterChallengeSolved: false,
+    completedDoors: [],
+    door1: {
+      phase: 'observe',
+      selectedOption: null,
+      errorHint: null,
+    },
+    door2: {
+      selectedOption: null,
+      solved: false,
+      errorHint: null,
+    },
+    door3: {
+      openedEmpty: [],
+      solved: false,
+      errorHint: null,
+    },
+    door4: {
+      selectedOption: null,
+      solved: false,
+      errorHint: null,
+    },
+    door5: {
+      phase: 'observe',
+      selectedOrder: null,
+      errorHint: null,
+    },
+    giftBoxOpened: false,
+    secondPhotoRevealed: false,
+  };
+}
 
-export const DEFAULT_TEACHER_SETTINGS: TeacherSettings = {
-  strictDay1DateLock: false,
-  simulatedDate: null,
-  manualUnlocks: {
-    'nov-25': false,
-    'nov-26': false,
-    'nov-27': false,
-    'nov-30': false,
-    'dec-01': false,
-  },
-};
+export function createDefaultTeacherSettings(): TeacherSettings {
+  return {
+    manualUnlocks: {
+      'door-1': false,
+      'door-2': false,
+      'door-3': false,
+      'door-4': false,
+      'door-5': false,
+    },
+  };
+}
 
 export const DEFAULT_AUDIO_PREFS: AudioPreferences = {
   sfxEnabled: true,
   musicEnabled: false,
 };
 
-export function createDefaultProgress(): GameProgress {
-  return {
-    completedMissions: [],
-    missionStepProgress: {},
-    teamCheckpoints: {},
-    finalRevealUnlocked: false,
-  };
-}
-
-export function loadProgress(): GameProgress {
+export function loadGameState(): OneDayGameState {
+  const def = createDefaultGameState();
   try {
-    const raw = localStorage.getItem(PROGRESS_KEY);
-    if (!raw) return createDefaultProgress();
-    const parsed = JSON.parse(raw) as Partial<GameProgress>;
+    const raw = localStorage.getItem(GAME_STATE_KEY);
+    if (!raw) return def;
+    const parsed = JSON.parse(raw) as Partial<OneDayGameState>;
     return {
-      completedMissions: Array.isArray(parsed.completedMissions) ? parsed.completedMissions : [],
-      missionStepProgress: parsed.missionStepProgress ?? {},
-      teamCheckpoints: parsed.teamCheckpoints ?? {},
-      finalRevealUnlocked: Boolean(parsed.finalRevealUnlocked),
+      letterOpened: Boolean(parsed.letterOpened),
+      tf1Answer: typeof parsed.tf1Answer === 'boolean' ? parsed.tf1Answer : null,
+      tf2Answer: typeof parsed.tf2Answer === 'boolean' ? parsed.tf2Answer : null,
+      tfHint: typeof parsed.tfHint === 'string' ? parsed.tfHint : null,
+      letterChallengeSolved: Boolean(parsed.letterChallengeSolved),
+      completedDoors: Array.isArray(parsed.completedDoors)
+        ? parsed.completedDoors.filter((id): id is DoorId =>
+            DOORS.some((d) => d.id === id)
+          )
+        : [],
+      door1: {
+        phase:
+          parsed.door1?.phase === 'guess' || parsed.door1?.phase === 'solved'
+            ? parsed.door1.phase
+            : 'observe',
+        selectedOption:
+          typeof parsed.door1?.selectedOption === 'string'
+            ? parsed.door1.selectedOption
+            : null,
+        errorHint:
+          typeof parsed.door1?.errorHint === 'string' ? parsed.door1.errorHint : null,
+      },
+      door2: {
+        selectedOption:
+          typeof parsed.door2?.selectedOption === 'string'
+            ? parsed.door2.selectedOption
+            : null,
+        solved: Boolean(parsed.door2?.solved),
+        errorHint:
+          typeof parsed.door2?.errorHint === 'string' ? parsed.door2.errorHint : null,
+      },
+      door3: {
+        openedEmpty: Array.isArray(parsed.door3?.openedEmpty)
+          ? parsed.door3.openedEmpty.filter(
+              (c): c is 'piros' | 'kek' => c === 'piros' || c === 'kek'
+            )
+          : [],
+        solved: Boolean(parsed.door3?.solved),
+        errorHint:
+          typeof parsed.door3?.errorHint === 'string' ? parsed.door3.errorHint : null,
+      },
+      door4: {
+        selectedOption:
+          typeof parsed.door4?.selectedOption === 'string'
+            ? parsed.door4.selectedOption
+            : null,
+        solved: Boolean(parsed.door4?.solved),
+        errorHint:
+          typeof parsed.door4?.errorHint === 'string' ? parsed.door4.errorHint : null,
+      },
+      door5: {
+        phase:
+          parsed.door5?.phase === 'guess' || parsed.door5?.phase === 'solved'
+            ? parsed.door5.phase
+            : 'observe',
+        selectedOrder:
+          typeof parsed.door5?.selectedOrder === 'string'
+            ? parsed.door5.selectedOrder
+            : null,
+        errorHint:
+          typeof parsed.door5?.errorHint === 'string' ? parsed.door5.errorHint : null,
+      },
+      giftBoxOpened: Boolean(parsed.giftBoxOpened),
+      secondPhotoRevealed: Boolean(parsed.secondPhotoRevealed),
     };
   } catch {
-    return createDefaultProgress();
+    return def;
   }
 }
 
-export function saveProgress(progress: GameProgress): void {
+export function saveGameState(state: OneDayGameState): void {
   try {
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+    localStorage.setItem(GAME_STATE_KEY, JSON.stringify(state));
   } catch {
-    // Ignore storage quota errors cleanly
+    // Ignore quota errors
   }
 }
 
-export function loadAllMissionStates(): Partial<Record<MissionId, Record<string, unknown>>> {
+export function resetAllGameStorage(): OneDayGameState {
+  const fresh = createDefaultGameState();
   try {
-    const raw = localStorage.getItem(MISSION_STATES_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return {};
-    }
-    return parsed as Partial<Record<MissionId, Record<string, unknown>>>;
+    localStorage.removeItem(GAME_STATE_KEY);
+    localStorage.removeItem(TEACHER_KEY);
   } catch {
-    return {};
+    // Ignore storage errors
   }
-}
-
-export function loadMissionState<T extends Record<string, unknown>>(
-  missionId: MissionId
-): Partial<T> | null {
-  const all = loadAllMissionStates();
-  const entry = all[missionId];
-  if (!entry || typeof entry !== 'object') return null;
-  return entry as Partial<T>;
-}
-
-export function saveMissionState<T extends Record<string, unknown>>(
-  missionId: MissionId,
-  state: T
-): void {
-  try {
-    const all = loadAllMissionStates();
-    all[missionId] = state;
-    localStorage.setItem(MISSION_STATES_KEY, JSON.stringify(all));
-  } catch {
-    // Ignore storage quota errors cleanly
-  }
-}
-
-export function clearMissionState(missionId: MissionId): void {
-  try {
-    const all = loadAllMissionStates();
-    delete all[missionId];
-    localStorage.setItem(MISSION_STATES_KEY, JSON.stringify(all));
-  } catch {
-    // Ignore storage quota errors cleanly
-  }
-}
-
-export function markMissionReplayRequested(missionId: MissionId): void {
-  try {
-    const all = loadAllMissionStates();
-    all[missionId] = { isReplaying: true };
-    localStorage.setItem(MISSION_STATES_KEY, JSON.stringify(all));
-  } catch {
-    // Ignore storage quota errors cleanly
-  }
-}
-
-export function clearAllMissionStates(): void {
-  try {
-    localStorage.removeItem(MISSION_STATES_KEY);
-  } catch {
-    // Ignore storage quota errors cleanly
-  }
+  saveGameState(fresh);
+  saveTeacherSettings(createDefaultTeacherSettings());
+  return fresh;
 }
 
 export function loadTeacherSettings(): TeacherSettings {
+  const def = createDefaultTeacherSettings();
   try {
     const raw = localStorage.getItem(TEACHER_KEY);
-    if (!raw) {
-      return {
-        ...DEFAULT_TEACHER_SETTINGS,
-        manualUnlocks: { ...DEFAULT_TEACHER_SETTINGS.manualUnlocks },
-      };
-    }
+    if (!raw) return def;
     const parsed = JSON.parse(raw) as Partial<TeacherSettings>;
     return {
-      strictDay1DateLock: Boolean(parsed.strictDay1DateLock),
-      simulatedDate: typeof parsed.simulatedDate === 'string' ? parsed.simulatedDate : null,
       manualUnlocks: {
-        ...DEFAULT_TEACHER_SETTINGS.manualUnlocks,
+        ...def.manualUnlocks,
         ...(parsed.manualUnlocks ?? {}),
       },
     };
   } catch {
-    return {
-      ...DEFAULT_TEACHER_SETTINGS,
-      manualUnlocks: { ...DEFAULT_TEACHER_SETTINGS.manualUnlocks },
-    };
+    return def;
   }
 }
 
@@ -157,7 +179,7 @@ export function saveTeacherSettings(settings: TeacherSettings): void {
   try {
     localStorage.setItem(TEACHER_KEY, JSON.stringify(settings));
   } catch {
-    // Ignore storage quota errors cleanly
+    // Ignore
   }
 }
 
@@ -183,65 +205,35 @@ export function saveAudioPreferences(prefs: AudioPreferences): void {
   }
 }
 
-export function getEffectiveDate(settings: TeacherSettings): Date {
-  if (settings.simulatedDate) {
-    const [y, m, d] = settings.simulatedDate.split('-').map(Number);
-    if (y && m && d) {
-      return new Date(y, m - 1, d, 12, 0, 0);
-    }
-  }
-  return new Date();
-}
-
-export function isMissionDateReached(mission: MissionMeta, effectiveDate: Date): boolean {
-  const month = effectiveDate.getMonth() + 1; // 1-12
-  const day = effectiveDate.getDate();
-
-  if (mission.unlockMonth === 11) {
-    return (month === 11 && day >= mission.unlockDay) || month === 12;
-  }
-  if (mission.unlockMonth === 12) {
-    return month === 12 && day >= mission.unlockDay;
-  }
-  return false;
-}
-
-export function isMissionUnlocked(
-  missionId: MissionId,
-  settings: TeacherSettings,
-  progress: GameProgress
+export function isDoorUnlocked(
+  doorId: DoorId,
+  state: OneDayGameState,
+  settings: TeacherSettings
 ): boolean {
-  const mission = MISSIONS.find((m) => m.id === missionId);
-  if (!mission) return false;
-
-  // Already completed missions always remain accessible
-  if (progress.completedMissions.includes(missionId)) {
+  if (state.completedDoors.includes(doorId)) {
     return true;
   }
-
-  // Teacher manual unlock
-  if (settings.manualUnlocks[missionId]) {
+  if (settings.manualUnlocks[doorId]) {
     return true;
   }
-
-  const effectiveDate = getEffectiveDate(settings);
-
-  // Day 1 is ready for immediate classroom exploration unless strict Day 1 calendar lock is turned on
-  if (missionId === 'nov-25' && !settings.strictDay1DateLock) {
-    return true;
+  switch (doorId) {
+    case 'door-1':
+      return state.letterChallengeSolved;
+    case 'door-2':
+      return state.completedDoors.includes('door-1');
+    case 'door-3':
+      return state.completedDoors.includes('door-2');
+    case 'door-4':
+      return state.completedDoors.includes('door-3');
+    case 'door-5':
+      return state.completedDoors.includes('door-4');
   }
-
-  return isMissionDateReached(mission, effectiveDate);
 }
 
-// STRICT SECRECY GUARD:
-// Even if Mission 5 is unlocked, the final surprise ONLY unlocks after Mission 5 itself is completed
-// AND Mission 5 is genuinely unlocked (on Dec 1 or explicitly unlocked by the teacher).
-export function canShowFinalSurprise(
-  settings: TeacherSettings,
-  progress: GameProgress
-): boolean {
-  const dec1Unlocked = isMissionUnlocked('dec-01', settings, progress);
-  const dec1Completed = progress.completedMissions.includes('dec-01');
-  return dec1Unlocked && dec1Completed && progress.finalRevealUnlocked;
+export function canShowGiftBox(state: OneDayGameState): boolean {
+  return DOORS.every((d) => state.completedDoors.includes(d.id));
+}
+
+export function canShowFinalSurprise(state: OneDayGameState): boolean {
+  return canShowGiftBox(state) && state.giftBoxOpened;
 }

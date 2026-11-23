@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { CheckCircle2, DoorOpen } from 'lucide-react';
-import { ASSETS, MISSIONS } from '../data/missions';
-import { GameProgress, MissionId, TeacherSettings } from '../types/game';
+import { CheckCircle2, DoorOpen, MailOpen } from 'lucide-react';
+import { ASSETS, DOOR_ORDINALS, DOORS } from '../data/missions';
+import { DoorId, OneDayGameState, TeacherSettings } from '../types/game';
 import { soundEngine } from '../utils/soundEngine';
-import { isMissionUnlocked } from '../utils/storage';
+import { isDoorUnlocked } from '../utils/storage';
 
 interface CastleFiveDoorsProps {
-  progress: GameProgress;
+  gameState: OneDayGameState;
   settings: TeacherSettings;
-  onStartMission: (missionId: MissionId) => void;
+  onOpenDoor: (doorId: DoorId) => void;
+  onGoToLetter: () => void;
 }
 
 const GoldenPadlockIcon: React.FC<{
@@ -57,27 +58,42 @@ const GoldenPadlockIcon: React.FC<{
 };
 
 export const CastleFiveDoors: React.FC<CastleFiveDoorsProps> = ({
-  progress,
+  gameState,
   settings,
-  onStartMission,
+  onOpenDoor,
+  onGoToLetter,
 }) => {
-  const [lockedNotice, setLockedNotice] = useState<string | null>(null);
-  const earnedCount = progress.completedMissions.length;
+  const [lockedNotice, setLockedNotice] = useState<{
+    message: string;
+    needsLetter: boolean;
+  } | null>(null);
+  const earnedCount = gameState.completedDoors.length;
 
-  const handleDoorPress = (missionId: MissionId) => {
-    const mission = MISSIONS.find((m) => m.id === missionId);
-    if (!mission) return;
-    const unlocked = isMissionUnlocked(missionId, settings, progress);
+  const handleDoorPress = (doorId: DoorId) => {
+    const door = DOORS.find((d) => d.id === doorId);
+    if (!door) return;
+    const unlocked = isDoorUnlocked(doorId, gameState, settings);
 
     if (unlocked) {
       soundEngine.playClick();
       setLockedNotice(null);
-      onStartMission(missionId);
+      onOpenDoor(doorId);
     } else {
       soundEngine.playGentleHint();
-      setLockedNotice(
-        `A(z) ${mission.dayNumber}. titkos ajtó (${mission.dateLabel}) még zárva van! Ez a küldetés ${mission.dateLabel.toLowerCase()} napon nyílik meg az osztálynak.`
-      );
+      if (door.doorNumber === 1 && !gameState.letterChallengeSolved) {
+        setLockedNotice({
+          message:
+            'Az 1. varázsajtó kinyitásához előbb olvassátok el a Titkok Őrzőjének levelét, és válaszoljatok a két igaz–hamis kérdésre!',
+          needsLetter: true,
+        });
+      } else {
+        const currentOrd = DOOR_ORDINALS[door.doorNumber];
+        const prevOrd = DOOR_ORDINALS[(door.doorNumber - 1) as 1 | 2 | 3 | 4 | 5];
+        setLockedNotice({
+          message: `${currentOrd.articleCap} varázsajtó még zárva van! Haladjatok sorban, és előbb teljesítsétek ${prevOrd.articleLower} ajtó próbáját!`,
+          needsLetter: false,
+        });
+      }
     }
   };
 
@@ -106,23 +122,23 @@ export const CastleFiveDoors: React.FC<CastleFiveDoorsProps> = ({
               A kastély öt titkos ajtaja
             </h2>
           </div>
-          <div className="rounded-xl border border-amber-300/35 bg-[#0B192C]/80 px-4 py-2 text-sm font-bold text-amber-200">
+          <div className="rounded-xl border border-amber-300/35 bg-[#0B192C]/80 px-4 py-2 text-sm font-bold text-amber-200 tabular-nums">
             {earnedCount} / 5 varázspecsét megszerezve
           </div>
         </div>
 
-        {/* 5 Distinct Doors in clean non-overlapping grid */}
+        {/* 5 Programmed React Doors in clean non-overlapping grid */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
-          {MISSIONS.map((mission) => {
-            const unlocked = isMissionUnlocked(mission.id, settings, progress);
-            const completed = progress.completedMissions.includes(mission.id);
+          {DOORS.map((door) => {
+            const unlocked = isDoorUnlocked(door.id, gameState, settings);
+            const completed = gameState.completedDoors.includes(door.id);
 
             return (
               <button
-                key={mission.id}
+                key={door.id}
                 type="button"
-                onClick={() => handleDoorPress(mission.id)}
-                aria-label={`${mission.dayNumber}. ajtó – ${mission.dateLabel} – ${
+                onClick={() => handleDoorPress(door.id)}
+                aria-label={`${door.doorNumber}. ajtó – ${door.title} – ${
                   completed ? 'Teljesítve' : unlocked ? 'Nyitva' : 'Zárva'
                 }`}
                 className={`group relative flex flex-col items-center justify-between rounded-2xl border-2 p-3 sm:p-4 text-center transition-all touch-manipulation cursor-pointer ${
@@ -143,35 +159,31 @@ export const CastleFiveDoors: React.FC<CastleFiveDoorsProps> = ({
                       : 'border-slate-400/60 bg-slate-700 text-amber-100'
                   }`}
                 >
-                  {mission.dayNumber}
+                  {door.doorNumber}
                 </div>
 
-                {/* Arched Magic Door with EXACTLY ONE Golden Padlock */}
+                {/* Programmed Arched Magic Door with Single Golden Padlock */}
                 <div
                   className="mt-3 flex h-32 sm:h-36 w-full max-w-[116px] flex-col items-center justify-center rounded-t-[52px] rounded-b-lg border-4 shadow-inner transition-transform group-hover:scale-[1.03]"
                   style={{
-                    backgroundColor: completed
-                      ? mission.doorColor
-                      : unlocked
-                      ? mission.doorColor
-                      : '#1E293B',
+                    backgroundColor: completed || unlocked ? door.doorColor : '#1E293B',
                     borderColor: completed ? '#34D399' : unlocked ? '#FBBF24' : '#475569',
                   }}
                 >
                   <GoldenPadlockIcon
-                    doorNumber={mission.dayNumber}
-                    open={completed}
+                    doorNumber={door.doorNumber}
+                    open={completed || unlocked}
                     active={unlocked}
                   />
                 </div>
 
-                {/* Date & status */}
+                {/* Title & status */}
                 <div className="mt-3 w-full space-y-1">
-                  <p className="text-xs sm:text-sm font-bold text-amber-200 tabular-nums">
-                    {mission.shortDate}
+                  <p className="text-xs sm:text-sm font-bold text-amber-200">
+                    {door.shortLabel}
                   </p>
-                  <p className="text-xs font-semibold text-white/90 line-clamp-1">
-                    {mission.title}
+                  <p className="text-xs font-semibold text-white/95 line-clamp-1">
+                    {door.title}
                   </p>
                   <div className="pt-1 flex items-center justify-center gap-1 text-xs font-bold">
                     {completed ? (
@@ -197,9 +209,22 @@ export const CastleFiveDoors: React.FC<CastleFiveDoorsProps> = ({
         {lockedNotice && (
           <div
             role="status"
-            className="rounded-2xl border border-amber-400/50 bg-amber-950/75 px-4 py-3 text-center text-sm sm:text-base font-semibold text-amber-100"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 rounded-2xl border border-amber-400/50 bg-amber-950/80 px-5 py-4 text-center sm:text-left text-sm sm:text-base font-semibold text-amber-100"
           >
-            {lockedNotice}
+            <span>{lockedNotice.message}</span>
+            {lockedNotice.needsLetter && (
+              <button
+                type="button"
+                onClick={() => {
+                  soundEngine.playClick();
+                  onGoToLetter();
+                }}
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 text-sm font-bold text-[#0B192C] hover:bg-amber-300 transition-colors cursor-pointer shrink-0"
+              >
+                <MailOpen className="w-4 h-4" />
+                <span>Ugrás a titkos levélhez</span>
+              </button>
+            )}
           </div>
         )}
       </div>

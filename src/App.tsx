@@ -5,46 +5,45 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { CluesView } from './components/CluesView';
+import { GoldenSealBadge } from './components/GoldenSealBadge';
 import { HomeView } from './components/HomeView';
+import { LetterQuestView } from './components/LetterQuestView';
 import { OverviewDoorsView } from './components/OverviewDoorsView';
+import { SealsFinalView } from './components/SealsFinalView';
 import { SnowfallOverlay } from './components/SnowfallOverlay';
 import { TeacherPanelModal } from './components/TeacherPanelModal';
-import { TeamsView } from './components/TeamsView';
 import { TopBar } from './components/TopBar';
-import { MissionDec01 } from './components/missions/MissionDec01';
-import { MissionNov25 } from './components/missions/MissionNov25';
-import { MissionNov26 } from './components/missions/MissionNov26';
-import { MissionNov27 } from './components/missions/MissionNov27';
-import { MissionNov30 } from './components/missions/MissionNov30';
+import { Door1MissingItem } from './components/doors/Door1MissingItem';
+import { Door2MagicNumber } from './components/doors/Door2MagicNumber';
+import { Door3GoldenKey } from './components/doors/Door3GoldenKey';
+import { Door4SecretMessage } from './components/doors/Door4SecretMessage';
+import { Door5BellsSecret } from './components/doors/Door5BellsSecret';
+import { DOORS } from './data/missions';
 import {
   AppView,
   AudioPreferences,
-  GameProgress,
-  MissionId,
+  DoorId,
+  OneDayGameState,
   TeacherSettings,
-  TeamId,
 } from './types/game';
 import { soundEngine } from './utils/soundEngine';
 import {
-  clearAllMissionStates,
-  clearMissionState,
-  createDefaultProgress,
-  isMissionUnlocked,
+  createDefaultTeacherSettings,
+  isDoorUnlocked,
   loadAudioPreferences,
-  loadProgress,
+  loadGameState,
   loadTeacherSettings,
-  markMissionReplayRequested,
+  resetAllGameStorage,
   saveAudioPreferences,
-  saveProgress,
+  saveGameState,
   saveTeacherSettings,
 } from './utils/storage';
 
 export default function App() {
   const [view, setView] = useState<AppView>('home');
-  const [activeMissionId, setActiveMissionId] = useState<MissionId>('nov-25');
+  const [activeDoorId, setActiveDoorId] = useState<DoorId>('door-1');
 
-  const [progress, setProgress] = useState<GameProgress>(() => loadProgress());
+  const [gameState, setGameState] = useState<OneDayGameState>(() => loadGameState());
   const [teacherSettings, setTeacherSettings] = useState<TeacherSettings>(() =>
     loadTeacherSettings()
   );
@@ -54,27 +53,23 @@ export default function App() {
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [teacherModalOpen, setTeacherModalOpen] = useState(false);
-  const [missionSessionKey, setMissionSessionKey] = useState(0);
   const footerTapCountRef = useRef(0);
   const footerTapTimerRef = useRef<number | null>(null);
 
-  // Sync sound engine with stored preferences
   useEffect(() => {
     soundEngine.setSfxEnabled(audioPrefs.sfxEnabled);
     soundEngine.setMusicEnabled(audioPrefs.musicEnabled);
     saveAudioPreferences(audioPrefs);
   }, [audioPrefs]);
 
-  // Persist progress and teacher settings
   useEffect(() => {
-    saveProgress(progress);
-  }, [progress]);
+    saveGameState(gameState);
+  }, [gameState]);
 
   useEffect(() => {
     saveTeacherSettings(teacherSettings);
   }, [teacherSettings]);
 
-  // Fullscreen listener
   useEffect(() => {
     const onFsChange = () => {
       setIsFullscreen(Boolean(document.fullscreenElement));
@@ -83,7 +78,7 @@ export default function App() {
     return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
 
-  // Hidden teacher access: Ctrl+Shift+T or Alt+T or #tanito / ?tanito=1
+  // Hidden teacher access: Ctrl+Shift+T, Alt+T, #tanito, ?tanito=1, or 5 taps on footer
   useEffect(() => {
     const checkHashOrQuery = () => {
       if (
@@ -97,7 +92,10 @@ export default function App() {
     window.addEventListener('hashchange', checkHashOrQuery);
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 't') || (e.altKey && e.key.toLowerCase() === 't')) {
+      if (
+        (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 't') ||
+        (e.altKey && e.key.toLowerCase() === 't')
+      ) {
         e.preventDefault();
         setTeacherModalOpen((prev) => !prev);
       }
@@ -124,103 +122,64 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleStartMission = (missionId: MissionId) => {
-    if (!isMissionUnlocked(missionId, teacherSettings, progress)) {
-      setView('overview');
+  const handleOpenDoor = (doorId: DoorId) => {
+    if (!isDoorUnlocked(doorId, gameState, teacherSettings)) {
+      setView('doors');
       return;
     }
     soundEngine.playClick();
-    setActiveMissionId(missionId);
-    setView('mission');
+    setActiveDoorId(doorId);
+    setView('door');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleCompleteMission = (missionId: MissionId) => {
-    setProgress((prev) => {
-      const completed = prev.completedMissions.includes(missionId)
-        ? prev.completedMissions
-        : [...prev.completedMissions, missionId];
+  const markDoorCompleted = (doorId: DoorId) => {
+    setGameState((prev) => {
+      if (prev.completedDoors.includes(doorId)) return prev;
       return {
         ...prev,
-        completedMissions: completed,
-        finalRevealUnlocked:
-          missionId === 'dec-01' ? true : prev.finalRevealUnlocked,
+        completedDoors: [...prev.completedDoors, doorId],
       };
     });
   };
 
-  const handleTeamSolved = (missionId: MissionId, teamId: TeamId) => {
-    setProgress((prev) => {
-      const current = prev.teamCheckpoints[missionId] ?? [];
-      if (current.includes(teamId)) return prev;
-      return {
+  const handleCheckLetterTf = () => {
+    const { tf1Answer, tf2Answer } = gameState;
+    if (tf1Answer === null || tf2Answer === null) {
+      soundEngine.playGentleHint();
+      setGameState((prev) => ({
         ...prev,
-        teamCheckpoints: {
-          ...prev.teamCheckpoints,
-          [missionId]: [...current, teamId],
-        },
-      };
-    });
-  };
+        tfHint: 'Válaszoljatok mindkét igaz–hamis kérdésre közösen!',
+      }));
+      return;
+    }
 
-  const handleToggleMissionCompleted = (missionId: MissionId) => {
-    clearMissionState(missionId);
-    setMissionSessionKey((prev) => prev + 1);
-    setProgress((prev) => {
-      const exists = prev.completedMissions.includes(missionId);
-      const nextCompleted = exists
-        ? prev.completedMissions.filter((id) => id !== missionId)
-        : [...prev.completedMissions, missionId];
-      const nextCheckpoints = { ...prev.teamCheckpoints };
-      if (exists) {
-        delete nextCheckpoints[missionId];
-      }
-      return {
+    if (tf1Answer === true && tf2Answer === false) {
+      soundEngine.playSealUnlock();
+      setGameState((prev) => ({
         ...prev,
-        completedMissions: nextCompleted,
-        teamCheckpoints: nextCheckpoints,
-        finalRevealUnlocked:
-          missionId === 'dec-01' ? !exists : prev.finalRevealUnlocked,
-      };
-    });
-  };
-
-  const handleResetProgress = () => {
-    clearAllMissionStates();
-    const freshProgress = createDefaultProgress();
-    saveProgress(freshProgress);
-    setProgress(freshProgress);
-    setMissionSessionKey((prev) => prev + 1);
-    setView('home');
-  };
-
-  const handleRestartMission = (missionId: MissionId) => {
-    const wasCompleted = progress.completedMissions.includes(missionId);
-
-    if (wasCompleted) {
-      // Preserve the earned golden seal, clue, and other days' results; reset only this mission's tasks/answers/hints/locks
-      markMissionReplayRequested(missionId);
+        letterChallengeSolved: true,
+        tfHint: null,
+      }));
     } else {
-      clearMissionState(missionId);
-      setProgress((prev) => {
-        const nextCheckpoints = { ...prev.teamCheckpoints };
-        delete nextCheckpoints[missionId];
-        return {
-          ...prev,
-          teamCheckpoints: nextCheckpoints,
-        };
-      });
-    }
-
-    setMissionSessionKey((prev) => prev + 1);
-    if (isMissionUnlocked(missionId, teacherSettings, progress)) {
-      setActiveMissionId(missionId);
-      setView('mission');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      soundEngine.playGentleHint();
+      setGameState((prev) => ({
+        ...prev,
+        tfHint:
+          'Olvassátok el újra a levelet! Öt varázspecsét kell a megfejtéshez, és nem versenyezve, hanem együtt gondolkodva kell megszerezni őket!',
+      }));
     }
   };
 
-  // Discreet 5-tap footer gesture for interactive whiteboard teacher access
+  const handleResetFullGame = () => {
+    const fresh = resetAllGameStorage();
+    setTeacherSettings(createDefaultTeacherSettings());
+    setGameState(fresh);
+    setActiveDoorId('door-1');
+    setView('home');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleFooterSecretTap = () => {
     footerTapCountRef.current += 1;
     if (footerTapTimerRef.current) {
@@ -236,80 +195,91 @@ export default function App() {
     }, 2500);
   };
 
-  const renderActiveMission = () => {
-    if (!isMissionUnlocked(activeMissionId, teacherSettings, progress)) {
+  const renderActiveDoor = () => {
+    if (!isDoorUnlocked(activeDoorId, gameState, teacherSettings)) {
       return (
         <OverviewDoorsView
-          progress={progress}
+          gameState={gameState}
           settings={teacherSettings}
-          onStartMission={handleStartMission}
+          onOpenDoor={handleOpenDoor}
+          onGoToLetter={() => handleNavigate('letter')}
         />
       );
     }
 
-    const alreadyCompleted = progress.completedMissions.includes(activeMissionId);
+    const activeDoorMeta = DOORS.find((d) => d.id === activeDoorId) ?? DOORS[0];
 
-    switch (activeMissionId) {
-      case 'nov-25':
-        return (
-          <MissionNov25
-            key={`nov-25-${missionSessionKey}`}
-            alreadyCompleted={alreadyCompleted}
-            onComplete={() => handleCompleteMission('nov-25')}
-            onTeamSolved={(teamId) => handleTeamSolved('nov-25', teamId)}
-            onBackToOverview={() => handleNavigate('overview')}
-            onGoToClues={() => handleNavigate('clues')}
-            onReplayMission={() => handleRestartMission('nov-25')}
+    return (
+      <div className="space-y-6">
+        {/* Door Header & Live Seals Collector */}
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#122643]/90 px-6 py-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-amber-300">
+              {activeDoorMeta.shortLabel}
+            </p>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-white">
+              {activeDoorMeta.title}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-2" aria-label="Összegyűjtött varázspecsétek">
+            {DOORS.map((d) => (
+              <GoldenSealBadge
+                key={d.id}
+                number={d.doorNumber}
+                unlocked={gameState.completedDoors.includes(d.id)}
+                size="sm"
+              />
+            ))}
+          </div>
+        </div>
+
+        {activeDoorId === 'door-1' && (
+          <Door1MissingItem
+            state={gameState.door1}
+            onUpdate={(next) => setGameState((prev) => ({ ...prev, door1: next }))}
+            onSolve={() => markDoorCompleted('door-1')}
+            onNextDoor={() => handleOpenDoor('door-2')}
           />
-        );
-      case 'nov-26':
-        return (
-          <MissionNov26
-            key={`nov-26-${missionSessionKey}`}
-            alreadyCompleted={alreadyCompleted}
-            onComplete={() => handleCompleteMission('nov-26')}
-            onTeamSolved={(teamId) => handleTeamSolved('nov-26', teamId)}
-            onBackToOverview={() => handleNavigate('overview')}
-            onGoToClues={() => handleNavigate('clues')}
-            onReplayMission={() => handleRestartMission('nov-26')}
+        )}
+
+        {activeDoorId === 'door-2' && (
+          <Door2MagicNumber
+            state={gameState.door2}
+            onUpdate={(next) => setGameState((prev) => ({ ...prev, door2: next }))}
+            onSolve={() => markDoorCompleted('door-2')}
+            onNextDoor={() => handleOpenDoor('door-3')}
           />
-        );
-      case 'nov-27':
-        return (
-          <MissionNov27
-            key={`nov-27-${missionSessionKey}`}
-            alreadyCompleted={alreadyCompleted}
-            onComplete={() => handleCompleteMission('nov-27')}
-            onTeamSolved={(teamId) => handleTeamSolved('nov-27', teamId)}
-            onBackToOverview={() => handleNavigate('overview')}
-            onGoToClues={() => handleNavigate('clues')}
-            onReplayMission={() => handleRestartMission('nov-27')}
+        )}
+
+        {activeDoorId === 'door-3' && (
+          <Door3GoldenKey
+            state={gameState.door3}
+            onUpdate={(next) => setGameState((prev) => ({ ...prev, door3: next }))}
+            onSolve={() => markDoorCompleted('door-3')}
+            onNextDoor={() => handleOpenDoor('door-4')}
           />
-        );
-      case 'nov-30':
-        return (
-          <MissionNov30
-            key={`nov-30-${missionSessionKey}`}
-            alreadyCompleted={alreadyCompleted}
-            onComplete={() => handleCompleteMission('nov-30')}
-            onTeamSolved={(teamId) => handleTeamSolved('nov-30', teamId)}
-            onBackToOverview={() => handleNavigate('overview')}
-            onGoToClues={() => handleNavigate('clues')}
-            onReplayMission={() => handleRestartMission('nov-30')}
+        )}
+
+        {activeDoorId === 'door-4' && (
+          <Door4SecretMessage
+            state={gameState.door4}
+            onUpdate={(next) => setGameState((prev) => ({ ...prev, door4: next }))}
+            onSolve={() => markDoorCompleted('door-4')}
+            onNextDoor={() => handleOpenDoor('door-5')}
           />
-        );
-      case 'dec-01':
-        return (
-          <MissionDec01
-            key={`dec-01-${missionSessionKey}`}
-            alreadyCompleted={alreadyCompleted}
-            onComplete={() => handleCompleteMission('dec-01')}
-            onTeamSolved={(teamId) => handleTeamSolved('dec-01', teamId)}
-            onBackToOverview={() => handleNavigate('overview')}
-            onReplayMission={() => handleRestartMission('dec-01')}
+        )}
+
+        {activeDoorId === 'door-5' && (
+          <Door5BellsSecret
+            state={gameState.door5}
+            onUpdate={(next) => setGameState((prev) => ({ ...prev, door5: next }))}
+            onSolve={() => markDoorCompleted('door-5')}
+            onNextDoor={() => handleNavigate('seals')}
           />
-        );
-    }
+        )}
+      </div>
+    );
   };
 
   return (
@@ -324,11 +294,11 @@ export default function App() {
       />
 
       <main className="relative z-20 mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 py-8 sm:py-10">
-        {view === 'mission' && (
+        {view === 'door' && (
           <div className="mb-6">
             <button
               type="button"
-              onClick={() => handleNavigate('overview')}
+              onClick={() => handleNavigate('doors')}
               className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-amber-200 hover:bg-white/10 transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -339,7 +309,7 @@ export default function App() {
 
         {view === 'home' && (
           <HomeView
-            progress={progress}
+            gameState={gameState}
             settings={teacherSettings}
             audioPrefs={audioPrefs}
             onToggleSfx={() =>
@@ -348,26 +318,53 @@ export default function App() {
             onToggleMusic={() =>
               setAudioPrefs((prev) => ({ ...prev, musicEnabled: !prev.musicEnabled }))
             }
-            onStartMission={handleStartMission}
+            onOpenDoor={handleOpenDoor}
             onNavigate={handleNavigate}
+            onResetFullGame={handleResetFullGame}
           />
         )}
 
-        {view === 'overview' && (
+        {view === 'letter' && (
+          <LetterQuestView
+            gameState={gameState}
+            onOpenLetter={() =>
+              setGameState((prev) => ({ ...prev, letterOpened: true }))
+            }
+            onSelectTf1={(val) =>
+              setGameState((prev) => ({ ...prev, tf1Answer: val, tfHint: null }))
+            }
+            onSelectTf2={(val) =>
+              setGameState((prev) => ({ ...prev, tf2Answer: val, tfHint: null }))
+            }
+            onCheckAnswers={handleCheckLetterTf}
+            onEnterDoor1={() => handleOpenDoor('door-1')}
+            onBackToDoors={() => handleNavigate('doors')}
+          />
+        )}
+
+        {view === 'doors' && (
           <OverviewDoorsView
-            progress={progress}
+            gameState={gameState}
             settings={teacherSettings}
-            onStartMission={handleStartMission}
+            onOpenDoor={handleOpenDoor}
+            onGoToLetter={() => handleNavigate('letter')}
           />
         )}
 
-        {view === 'teams' && <TeamsView progress={progress} />}
-
-        {view === 'clues' && (
-          <CluesView progress={progress} settings={teacherSettings} />
+        {view === 'seals' && (
+          <SealsFinalView
+            gameState={gameState}
+            onOpenGiftBox={() =>
+              setGameState((prev) => ({ ...prev, giftBoxOpened: true }))
+            }
+            onRevealSecondPhoto={() =>
+              setGameState((prev) => ({ ...prev, secondPhotoRevealed: true }))
+            }
+            onGoToDoors={() => handleNavigate('doors')}
+          />
         )}
 
-        {view === 'mission' && renderActiveMission()}
+        {view === 'door' && renderActiveDoor()}
       </main>
 
       <footer className="relative z-20 border-t border-white/10 bg-[#081324]/90 py-5 text-center text-sm text-slate-400">
@@ -376,7 +373,7 @@ export default function App() {
           onClick={handleFooterSecretTap}
           className="select-none cursor-default hover:text-slate-300 transition-colors"
         >
-          A 3. b titkos téli küldetése · Közös nyomozás
+          A 3. b titkos téli küldetése · Közös osztálykaland
         </button>
       </footer>
 
@@ -384,15 +381,16 @@ export default function App() {
         isOpen={teacherModalOpen}
         onClose={() => setTeacherModalOpen(false)}
         settings={teacherSettings}
-        progress={progress}
+        gameState={gameState}
         onUpdateSettings={setTeacherSettings}
-        onResetProgress={handleResetProgress}
-        onToggleMissionCompleted={handleToggleMissionCompleted}
-        onTestMission={(missionId) => {
-          setActiveMissionId(missionId);
-          setView('mission');
+        onResetFullGame={handleResetFullGame}
+        onTestDoor={(doorId) => {
+          setActiveDoorId(doorId);
+          setView('door');
         }}
-        onRestartMission={handleRestartMission}
+        onTestLetter={() => {
+          setView('letter');
+        }}
       />
     </div>
   );

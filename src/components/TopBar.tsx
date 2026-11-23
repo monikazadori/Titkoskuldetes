@@ -17,9 +17,9 @@ export const TopBar: React.FC<TopBarProps> = ({
 }) => {
   const navItems: { id: AppView; label: string }[] = [
     { id: 'home', label: 'Kezdőlap' },
-    { id: 'overview', label: 'Öt varázsajtó' },
-    { id: 'teams', label: 'Csapatok' },
-    { id: 'clues', label: 'Nyomok' },
+    { id: 'letter', label: 'Titkos levél' },
+    { id: 'doors', label: 'Öt varázsajtó' },
+    { id: 'seals', label: 'Varázspecsétek' },
   ];
 
   return (
@@ -40,7 +40,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           {navItems.map((item) => {
             const isActive =
               activeView === item.id ||
-              (item.id === 'overview' && activeView === 'mission');
+              (item.id === 'doors' && activeView === 'door');
             return (
               <button
                 key={item.id}
@@ -87,7 +87,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         {navItems.map((item) => {
           const isActive =
             activeView === item.id ||
-            (item.id === 'overview' && activeView === 'mission');
+            (item.id === 'doors' && activeView === 'door');
           return (
             <button
               key={item.id}
