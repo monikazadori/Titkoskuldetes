@@ -32,17 +32,16 @@ import {
   isDoorUnlocked,
   loadAudioPreferences,
   loadGameState,
+  loadNavigationState,
   loadTeacherSettings,
   resetAllGameStorage,
   saveAudioPreferences,
   saveGameState,
+  saveNavigationState,
   saveTeacherSettings,
 } from './utils/storage';
 
 export default function App() {
-  const [view, setView] = useState<AppView>('home');
-  const [activeDoorId, setActiveDoorId] = useState<DoorId>('door-1');
-
   const [gameState, setGameState] = useState<OneDayGameState>(() => loadGameState());
   const [teacherSettings, setTeacherSettings] = useState<TeacherSettings>(() =>
     loadTeacherSettings()
@@ -50,6 +49,22 @@ export default function App() {
   const [audioPrefs, setAudioPrefs] = useState<AudioPreferences>(() =>
     loadAudioPreferences()
   );
+
+  const [initialNav] = useState(() => {
+    const savedNav = loadNavigationState();
+    const loadedState = loadGameState();
+    const loadedTeacher = loadTeacherSettings();
+    if (
+      savedNav.view === 'door' &&
+      !isDoorUnlocked(savedNav.activeDoorId, loadedState, loadedTeacher)
+    ) {
+      return { view: 'doors' as AppView, activeDoorId: savedNav.activeDoorId };
+    }
+    return savedNav;
+  });
+
+  const [view, setView] = useState<AppView>(initialNav.view);
+  const [activeDoorId, setActiveDoorId] = useState<DoorId>(initialNav.activeDoorId);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [teacherModalOpen, setTeacherModalOpen] = useState(false);
@@ -62,6 +77,9 @@ export default function App() {
     saveAudioPreferences(audioPrefs);
   }, [audioPrefs]);
 
+  const latestStateRef = useRef({ gameState, teacherSettings, view, activeDoorId });
+  latestStateRef.current = { gameState, teacherSettings, view, activeDoorId };
+
   useEffect(() => {
     saveGameState(gameState);
   }, [gameState]);
@@ -69,6 +87,30 @@ export default function App() {
   useEffect(() => {
     saveTeacherSettings(teacherSettings);
   }, [teacherSettings]);
+
+  useEffect(() => {
+    saveNavigationState({ view, activeDoorId });
+  }, [view, activeDoorId]);
+
+  useEffect(() => {
+    const flushState = () => {
+      const {
+        gameState: currentGame,
+        teacherSettings: currentTeacher,
+        view: currentView,
+        activeDoorId: currentDoor,
+      } = latestStateRef.current;
+      saveGameState(currentGame);
+      saveTeacherSettings(currentTeacher);
+      saveNavigationState({ view: currentView, activeDoorId: currentDoor });
+    };
+    window.addEventListener('pagehide', flushState);
+    window.addEventListener('beforeunload', flushState);
+    return () => {
+      window.removeEventListener('pagehide', flushState);
+      window.removeEventListener('beforeunload', flushState);
+    };
+  }, []);
 
   useEffect(() => {
     const onFsChange = () => {

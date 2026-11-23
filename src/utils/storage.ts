@@ -1,8 +1,16 @@
 import { DOORS } from '../data/missions';
-import { AudioPreferences, DoorId, OneDayGameState, TeacherSettings } from '../types/game';
+import {
+  AppView,
+  AudioPreferences,
+  DoorId,
+  NavigationState,
+  OneDayGameState,
+  TeacherSettings,
+} from '../types/game';
 
 const GAME_STATE_KEY = 'titkos_teli_oneday_state_v1';
 const TEACHER_KEY = 'titkos_teli_oneday_teacher_v1';
+const NAV_STATE_KEY = 'titkos_teli_oneday_nav_v1';
 const AUDIO_KEY = 'mikulas_3b_audio_v1';
 
 export function createDefaultGameState(): OneDayGameState {
@@ -66,17 +74,24 @@ export function loadGameState(): OneDayGameState {
     const raw = localStorage.getItem(GAME_STATE_KEY);
     if (!raw) return def;
     const parsed = JSON.parse(raw) as Partial<OneDayGameState>;
+    const completedDoors = Array.isArray(parsed.completedDoors)
+      ? Array.from(
+          new Set(
+            parsed.completedDoors.filter((id): id is DoorId =>
+              DOORS.some((d) => d.id === id)
+            )
+          )
+        )
+      : [];
+    const allFiveCompleted = DOORS.every((d) => completedDoors.includes(d.id));
+
     return {
       letterOpened: Boolean(parsed.letterOpened),
       tf1Answer: typeof parsed.tf1Answer === 'boolean' ? parsed.tf1Answer : null,
       tf2Answer: typeof parsed.tf2Answer === 'boolean' ? parsed.tf2Answer : null,
       tfHint: typeof parsed.tfHint === 'string' ? parsed.tfHint : null,
       letterChallengeSolved: Boolean(parsed.letterChallengeSolved),
-      completedDoors: Array.isArray(parsed.completedDoors)
-        ? parsed.completedDoors.filter((id): id is DoorId =>
-            DOORS.some((d) => d.id === id)
-          )
-        : [],
+      completedDoors,
       door1: {
         phase:
           parsed.door1?.phase === 'guess' || parsed.door1?.phase === 'solved'
@@ -129,8 +144,9 @@ export function loadGameState(): OneDayGameState {
         errorHint:
           typeof parsed.door5?.errorHint === 'string' ? parsed.door5.errorHint : null,
       },
-      giftBoxOpened: Boolean(parsed.giftBoxOpened),
-      secondPhotoRevealed: Boolean(parsed.secondPhotoRevealed),
+      giftBoxOpened: allFiveCompleted && Boolean(parsed.giftBoxOpened),
+      secondPhotoRevealed:
+        allFiveCompleted && Boolean(parsed.giftBoxOpened) && Boolean(parsed.secondPhotoRevealed),
     };
   } catch {
     return def;
@@ -145,16 +161,53 @@ export function saveGameState(state: OneDayGameState): void {
   }
 }
 
+export function createDefaultNavigationState(): NavigationState {
+  return {
+    view: 'home',
+    activeDoorId: 'door-1',
+  };
+}
+
+export function loadNavigationState(): NavigationState {
+  const def = createDefaultNavigationState();
+  try {
+    const raw = localStorage.getItem(NAV_STATE_KEY);
+    if (!raw) return def;
+    const parsed = JSON.parse(raw) as Partial<NavigationState>;
+    const validViews: AppView[] = ['home', 'letter', 'doors', 'seals', 'door'];
+    const view =
+      parsed.view && validViews.includes(parsed.view) ? parsed.view : def.view;
+    const activeDoorId =
+      parsed.activeDoorId && DOORS.some((d) => d.id === parsed.activeDoorId)
+        ? parsed.activeDoorId
+        : def.activeDoorId;
+    return { view, activeDoorId };
+  } catch {
+    return def;
+  }
+}
+
+export function saveNavigationState(nav: NavigationState): void {
+  try {
+    localStorage.setItem(NAV_STATE_KEY, JSON.stringify(nav));
+  } catch {
+    // Ignore quota errors
+  }
+}
+
 export function resetAllGameStorage(): OneDayGameState {
   const fresh = createDefaultGameState();
+  const freshNav = createDefaultNavigationState();
   try {
     localStorage.removeItem(GAME_STATE_KEY);
     localStorage.removeItem(TEACHER_KEY);
+    localStorage.removeItem(NAV_STATE_KEY);
   } catch {
     // Ignore storage errors
   }
   saveGameState(fresh);
   saveTeacherSettings(createDefaultTeacherSettings());
+  saveNavigationState(freshNav);
   return fresh;
 }
 

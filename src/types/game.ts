@@ -66,3 +66,8 @@ export interface AudioPreferences {
 }
 
 export type AppView = 'home' | 'letter' | 'doors' | 'seals' | 'door';
+
+export interface NavigationState {
+  view: AppView;
+  activeDoorId: DoorId;
+}
